@@ -57,4 +57,28 @@ The program will automatically check for updates when launched. If an update is 
 ## Troubleshooting
 - If you get authentication errors, delete the `.cache` file in the same directory as the program and try again
 - Make sure you have an active internet connection
-- For file import issues, check that your file is in one of the supported formats 
+- For file import issues, check that your file is in one of the supported formats
+
+## Development with Docker
+
+1. Clone the repository:
+```bash
+git clone https://github.com/joeskinner353/spotify-playlist-maker.git
+cd spotify-playlist-maker
+```
+
+2. Build and run with Docker:
+```bash
+# Allow Docker to connect to X server (on macOS, need XQuartz running)
+xhost +local:docker
+
+# Build and run
+docker-compose up --build
+```
+
+3. For development, you can mount your local directory:
+```bash
+docker-compose up
+```
+
+This will reflect changes to the code immediately without rebuilding. 
