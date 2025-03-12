@@ -45,19 +45,43 @@ class SpotifyPlaylistCreator:
         webbrowser.open('https://github.com/joeskinner353/spotify-playlist-maker/releases/latest')
 
     def setup_spotify(self):
-        # Spotify API credentials
-        client_id = 'e33e4e614926406e991d332035699a43'
-        client_secret = 'c465ba7b3cb0481c8ce8b6079c34f2d4'
-        redirect_uri = 'http://localhost:8888/callback'
-        
-        scope = 'playlist-modify-public'
-        
-        self.sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-            client_id=client_id,
-            client_secret=client_secret,
-            redirect_uri=redirect_uri,
-            scope=scope
-        ))
+        try:
+            # Spotify API credentials
+            client_id = 'e33e4e614926406e991d332035699a43'
+            client_secret = 'c465ba7b3cb0481c8ce8b6079c34f2d4'
+            redirect_uri = 'http://localhost:8888/callback'
+            
+            scope = 'playlist-modify-public'
+            
+            # Clear any existing cached token
+            cache_path = '.cache'
+            if os.path.exists(cache_path):
+                os.remove(cache_path)
+            
+            auth_manager = SpotifyOAuth(
+                client_id=client_id,
+                client_secret=client_secret,
+                redirect_uri=redirect_uri,
+                scope=scope,
+                open_browser=True  # Explicitly set to open browser
+            )
+            
+            # Get the token first to ensure authentication is complete
+            token = auth_manager.get_access_token(as_dict=False)
+            
+            self.sp = spotipy.Spotify(auth_manager=auth_manager)
+            
+            # Verify connection by getting current user
+            self.sp.current_user()
+            
+        except Exception as e:
+            messagebox.showerror(
+                "Authentication Error",
+                "Failed to authenticate with Spotify. Please try again.\n"
+                "If the problem persists, try deleting the .cache file and restarting.\n\n"
+                f"Error: {str(e)}"
+            )
+            raise  # Re-raise the exception to close the app if authentication fails
 
     def create_gui(self):
         self.window = tk.Tk()

@@ -1,1 +1,1 @@
-VERSION = "1.0.0" 
+VERSION = "1.0.2"  # Increment from 1.0.1 for bug fix 
