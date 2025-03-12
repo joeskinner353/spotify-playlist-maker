@@ -6,6 +6,7 @@ import pandas as pd
 import docx
 import PyPDF2
 import os
+import sys
 import requests
 from version import VERSION
 
@@ -53,8 +54,16 @@ class SpotifyPlaylistCreator:
             
             scope = 'playlist-modify-public'
             
+            # Get the application directory (works for both source and compiled versions)
+            if getattr(sys, 'frozen', False):
+                application_path = os.path.dirname(sys.executable)
+            else:
+                application_path = os.path.dirname(os.path.abspath(__file__))
+            
+            # Set up cache path in the application directory
+            cache_path = os.path.join(application_path, '.spotify_cache')
+            
             # Clear any existing cached token
-            cache_path = '.cache'
             if os.path.exists(cache_path):
                 os.remove(cache_path)
             
@@ -63,7 +72,9 @@ class SpotifyPlaylistCreator:
                 client_secret=client_secret,
                 redirect_uri=redirect_uri,
                 scope=scope,
-                open_browser=True  # Explicitly set to open browser
+                open_browser=True,  # Explicitly set to open browser
+                cache_path=cache_path,  # Use custom cache path
+                show_dialog=True  # Always show the auth dialog
             )
             
             # Get the token first to ensure authentication is complete
@@ -72,14 +83,23 @@ class SpotifyPlaylistCreator:
             self.sp = spotipy.Spotify(auth_manager=auth_manager)
             
             # Verify connection by getting current user
-            self.sp.current_user()
+            user = self.sp.current_user()
+            if not user:
+                raise Exception("Failed to get user information")
             
         except Exception as e:
+            error_msg = str(e)
+            if "No token info" in error_msg:
+                error_msg = "Authentication failed. Please try again and make sure to complete the Spotify login process."
+            
             messagebox.showerror(
                 "Authentication Error",
-                "Failed to authenticate with Spotify. Please try again.\n"
-                "If the problem persists, try deleting the .cache file and restarting.\n\n"
-                f"Error: {str(e)}"
+                f"Failed to authenticate with Spotify. Please try again.\n"
+                f"If the problem persists:\n"
+                f"1. Delete the .spotify_cache file if it exists\n"
+                f"2. Restart the application\n"
+                f"3. Make sure to complete the Spotify login in your browser\n\n"
+                f"Error: {error_msg}"
             )
             raise  # Re-raise the exception to close the app if authentication fails
 
