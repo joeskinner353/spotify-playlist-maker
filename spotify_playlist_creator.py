@@ -6,12 +6,34 @@ import pandas as pd
 import docx
 import PyPDF2
 import os
+import requests
+from version import VERSION
 
 class SpotifyPlaylistCreator:
     def __init__(self):
+        self.version = VERSION
         self.sp = None
+        self.check_for_updates()
         self.setup_spotify()
         self.create_gui()
+
+    def check_for_updates(self):
+        try:
+            # Replace with your GitHub repo API URL
+            response = requests.get('https://api.github.com/repos/joeskinner353/spotify-playlist-maker/releases/latest')
+            latest_version = response.json()['tag_name']
+            
+            if latest_version > self.version:
+                if messagebox.askyesno("Update Available", 
+                    f"Version {latest_version} is available. Current version is {self.version}.\nWould you like to update?"):
+                    self.open_download_page()
+        except:
+            # Silently fail if unable to check for updates
+            pass
+
+    def open_download_page(self):
+        import webbrowser
+        webbrowser.open('https://github.com/joeskinner353/spotify-playlist-maker/releases/latest')
 
     def setup_spotify(self):
         # Spotify API credentials

@@ -2,4 +2,5 @@ spotipy
 pandas
 python-docx
 PyPDF2
-openpyxl 
+openpyxl
+pyinstaller 
