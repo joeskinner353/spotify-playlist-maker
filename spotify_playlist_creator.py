@@ -14,6 +14,15 @@ class SpotifyPlaylistCreator:
         self.version = VERSION
         self.sp = None
         self.check_for_updates()
+        
+        # Show first-time setup message if .cache doesn't exist
+        if not os.path.exists('.cache'):
+            messagebox.showinfo("First Time Setup",
+                "Welcome to Spotify Playlist Creator!\n\n"
+                "On the next step, your web browser will open.\n"
+                "Please log in to your Spotify account and authorize the application.\n"
+                "After authorizing, return to this window.")
+        
         self.setup_spotify()
         self.create_gui()
 
