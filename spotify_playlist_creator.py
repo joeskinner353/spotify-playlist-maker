@@ -16,8 +16,8 @@ class SpotifyPlaylistCreator:
         self.sp = None
         self.check_for_updates()
         
-        # Show first-time setup message if .cache doesn't exist
-        if not os.path.exists('.cache'):
+        # Show first-time setup message if .spotify_cache doesn't exist
+        if not os.path.exists('.spotify_cache'):
             messagebox.showinfo("First Time Setup",
                 "Welcome to Spotify Playlist Creator!\n\n"
                 "On the next step, your web browser will open.\n"
@@ -63,29 +63,50 @@ class SpotifyPlaylistCreator:
             # Set up cache path in the application directory
             cache_path = os.path.join(application_path, '.spotify_cache')
             
-            # Clear any existing cached token
-            if os.path.exists(cache_path):
-                os.remove(cache_path)
-            
             auth_manager = SpotifyOAuth(
                 client_id=client_id,
                 client_secret=client_secret,
                 redirect_uri=redirect_uri,
                 scope=scope,
-                open_browser=True,  # Explicitly set to open browser
-                cache_path=cache_path,  # Use custom cache path
-                show_dialog=True  # Always show the auth dialog
+                open_browser=True,
+                cache_path=cache_path,
+                show_dialog=True
             )
             
-            # Get the token first to ensure authentication is complete
-            token = auth_manager.get_access_token(as_dict=False)
+            # Try to get existing token first
+            try:
+                token = auth_manager.get_cached_token()
+            except:
+                token = None
+            
+            # If no valid token, start new auth flow
+            if not token:
+                try:
+                    token = auth_manager.get_access_token(as_dict=False)
+                except Exception as auth_error:
+                    messagebox.showerror(
+                        "Authentication Error",
+                        "Failed to complete authentication. Please try again.\n"
+                        "Make sure to complete the Spotify login in your browser."
+                    )
+                    raise auth_error
             
             self.sp = spotipy.Spotify(auth_manager=auth_manager)
             
             # Verify connection by getting current user
-            user = self.sp.current_user()
-            if not user:
-                raise Exception("Failed to get user information")
+            try:
+                user = self.sp.current_user()
+                if not user:
+                    raise Exception("Failed to get user information")
+            except Exception as e:
+                # If verification fails, clear cache and try again
+                if os.path.exists(cache_path):
+                    os.remove(cache_path)
+                messagebox.showerror(
+                    "Authentication Error",
+                    "Failed to verify Spotify connection. Please restart the application and try again."
+                )
+                raise
             
         except Exception as e:
             error_msg = str(e)

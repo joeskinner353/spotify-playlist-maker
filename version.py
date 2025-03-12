@@ -1,1 +1,1 @@
-VERSION = "1.0.3"  # Authentication fixes for compiled version 
+VERSION = "1.0.4"  # Improved authentication flow and error handling 
