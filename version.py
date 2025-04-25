@@ -1,1 +1,1 @@
-VERSION = "1.0.2"  # Increment from 1.0.1 for bug fix 
+VERSION = "1.0.4"  # Improved authentication flow and error handling 

@@ -1,6 +1,7 @@
-spotipy
-pandas
-python-docx
-PyPDF2
-openpyxl
-pyinstaller 
+spotipy==2.23.0
+numpy==1.24.3
+pandas==2.0.3
+python-docx==1.0.1
+PyPDF2==3.0.1
+openpyxl==3.1.2
+pyinstaller==6.1.0

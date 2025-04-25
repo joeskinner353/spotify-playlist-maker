@@ -6,7 +6,9 @@ import pandas as pd
 import docx
 import PyPDF2
 import os
+import sys
 import requests
+import pkg_resources
 from version import VERSION
 
 class SpotifyPlaylistCreator:
@@ -14,9 +16,10 @@ class SpotifyPlaylistCreator:
         self.version = VERSION
         self.sp = None
         self.check_for_updates()
+        self.check_package_compatibility()
         
-        # Show first-time setup message if .cache doesn't exist
-        if not os.path.exists('.cache'):
+        # Show first-time setup message if .spotify_cache doesn't exist
+        if not os.path.exists('.spotify_cache'):
             messagebox.showinfo("First Time Setup",
                 "Welcome to Spotify Playlist Creator!\n\n"
                 "On the next step, your web browser will open.\n"
@@ -26,6 +29,66 @@ class SpotifyPlaylistCreator:
         self.setup_spotify()
         self.create_gui()
 
+    def check_package_compatibility(self):
+        """Check if installed packages match the required versions."""
+        try:
+            requirements = {}
+            with open('requirements.txt', 'r') as f:
+                for line in f:
+                    if '==' in line:
+                        package, version = line.strip().split('==')
+                        requirements[package] = version
+            
+            incompatible = []
+            for package, required_version in requirements.items():
+                try:
+                    installed_version = pkg_resources.get_distribution(package).version
+                    if installed_version != required_version:
+                        incompatible.append(f"{package}: required {required_version}, found {installed_version}")
+                except pkg_resources.DistributionNotFound:
+                    incompatible.append(f"{package}: not installed (required {required_version})")
+            
+            if incompatible:
+                if messagebox.askyesno("Package Version Mismatch",
+                    "Some packages have incompatible versions that may cause errors:\n\n" +
+                    "\n".join(incompatible) +
+                    "\n\nWould you like to update the packages to the required versions?"):
+                    self.update_packages()
+        except Exception as e:
+            # Log the error but continue
+            print(f"Warning: Failed to check package compatibility: {str(e)}")
+    
+    def update_packages(self):
+        """Update packages to the versions specified in requirements.txt."""
+        try:
+            import subprocess
+            import sys
+            
+            # Get the Python executable path
+            python_exe = sys.executable
+            
+            # Run pip install in a subprocess
+            cmd = [python_exe, "-m", "pip", "install", "-r", "requirements.txt", "--upgrade"]
+            
+            # Show a message that the update is in progress
+            messagebox.showinfo("Updating Packages", 
+                "Packages are being updated. The application will restart when complete.")
+            
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                messagebox.showinfo("Update Complete", 
+                    "Packages have been updated successfully.\nThe application will now restart.")
+                
+                # Restart the application
+                os.execv(python_exe, [python_exe] + sys.argv)
+            else:
+                messagebox.showerror("Update Failed",
+                    f"Failed to update packages. You may need to manually run:\n\n" +
+                    f"{' '.join(cmd)}\n\nError: {result.stderr}")
+        except Exception as e:
+            messagebox.showerror("Update Error", f"Error updating packages: {str(e)}")
+    
     def check_for_updates(self):
         try:
             # Replace with your GitHub repo API URL
@@ -40,48 +103,42 @@ class SpotifyPlaylistCreator:
             # Silently fail if unable to check for updates
             pass
 
-    def open_download_page(self):
-        import webbrowser
-        webbrowser.open('https://github.com/joeskinner353/spotify-playlist-maker/releases/latest')
-
     def setup_spotify(self):
+        """Set up Spotify authentication."""
         try:
-            # Spotify API credentials
-            client_id = 'e33e4e614926406e991d332035699a43'
-            client_secret = 'c465ba7b3cb0481c8ce8b6079c34f2d4'
-            redirect_uri = 'http://localhost:8888/callback'
+            auth_manager = SpotifyOAuth(
+                client_id="your_client_id",
+                client_secret="your_client_secret",
+                redirect_uri="http://localhost:8888/callback",
+                scope="playlist-modify-public"
+            )
             
-            scope = 'playlist-modify-public'
-            
-            # Clear any existing cached token
+            token = auth_manager.get_access_token(as_dict=False)
+        except Exception as auth_error:
+            messagebox.showerror(
+                "Authentication Error",
+                "Failed to complete authentication. Please try again.\n"
+                "Make sure to complete the Spotify login in your browser."
+            )
+            raise auth_error
+        
+        self.sp = spotipy.Spotify(auth_manager=auth_manager)
+        
+        # Verify connection by getting current user
+        try:
+            user = self.sp.current_user()
+            if not user:
+                raise Exception("Failed to get user information")
+        except Exception as e:
+            # If verification fails, clear cache and try again
             cache_path = '.cache'
             if os.path.exists(cache_path):
                 os.remove(cache_path)
-            
-            auth_manager = SpotifyOAuth(
-                client_id=client_id,
-                client_secret=client_secret,
-                redirect_uri=redirect_uri,
-                scope=scope,
-                open_browser=True  # Explicitly set to open browser
-            )
-            
-            # Get the token first to ensure authentication is complete
-            token = auth_manager.get_access_token(as_dict=False)
-            
-            self.sp = spotipy.Spotify(auth_manager=auth_manager)
-            
-            # Verify connection by getting current user
-            self.sp.current_user()
-            
-        except Exception as e:
             messagebox.showerror(
                 "Authentication Error",
-                "Failed to authenticate with Spotify. Please try again.\n"
-                "If the problem persists, try deleting the .cache file and restarting.\n\n"
-                f"Error: {str(e)}"
+                "Failed to verify Spotify connection. Please restart the application and try again."
             )
-            raise  # Re-raise the exception to close the app if authentication fails
+            raise
 
     def create_gui(self):
         self.window = tk.Tk()
@@ -202,4 +259,4 @@ class SpotifyPlaylistCreator:
             messagebox.showerror("Error", f"Error creating playlist: {str(e)}")
 
 if __name__ == "__main__":
-    app = SpotifyPlaylistCreator() 
+    app = SpotifyPlaylistCreator()

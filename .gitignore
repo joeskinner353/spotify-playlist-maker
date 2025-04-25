@@ -1,5 +1,6 @@
 # Spotify credentials and cache
 .cache
+.spotify_cache
 .env
 
 # Python

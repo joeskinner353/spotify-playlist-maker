@@ -54,7 +54,55 @@ A simple application that creates Spotify playlists from a list of songs. Suppor
 ## Updates
 The program will automatically check for updates when launched. If an update is available, you'll be prompted to download it.
 
+## Compatibility
+
+### Python Version
+This application is tested and compatible with:
+- Python 3.8, 3.9, 3.10, 3.11, and 3.12
+
+### Package Dependencies
+Specific package versions are required to ensure compatibility:
+```
+spotipy==2.23.0
+numpy==1.24.3
+pandas==2.0.3
+python-docx==1.0.1
+PyPDF2==3.0.1
+openpyxl==3.1.2
+pyinstaller==6.1.0
+```
+
+The application includes built-in dependency checking and will offer to update packages to the required versions if mismatches are detected.
+
 ## Troubleshooting
-- If you get authentication errors, delete the `.cache` file in the same directory as the program and try again
+- If you get authentication errors, delete the `.spotify_cache` file in the same directory as the program and try again
 - Make sure you have an active internet connection
-- For file import issues, check that your file is in one of the supported formats 
+- For file import issues, check that your file is in one of the supported formats
+- If you encounter package compatibility errors, the app should detect them automatically. If manual fixing is required:
+  ```bash
+  pip install -r requirements.txt --upgrade
+  ```
+
+## Development with Docker
+
+1. Clone the repository:
+```bash
+git clone https://github.com/joeskinner353/spotify-playlist-maker.git
+cd spotify-playlist-maker
+```
+
+2. Build and run with Docker:
+```bash
+# Allow Docker to connect to X server (on macOS, need XQuartz running)
+xhost +local:docker
+
+# Build and run
+docker-compose up --build
+```
+
+3. For development, you can mount your local directory:
+```bash
+docker-compose up
+```
+
+This will reflect changes to the code immediately without rebuilding.
